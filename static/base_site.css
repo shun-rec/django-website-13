@@ -1,0 +1,28 @@
+#header {
+  background: #2e8bc0;
+  color: white;
+}
+
+body {
+  background: #b1d4e0;
+}
+
+h1 {
+  color: #0c2d48;
+}
+
+#header a:link, #header a:visited {
+  color: white;
+}
+#branding h1, #branding h1 a:visited, #branding h1 a:link {
+  color: white;
+}
+
+.module h2, .module caption, .inline-group h2 {
+  background: #2e8bc0;
+  color: white;
+}
+
+a.section:link, a.section:visited {
+  color: white;
+}

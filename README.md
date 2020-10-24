@@ -1,33 +1,35 @@
-# djangoチュートリアル #7
+# djangoチュートリアル #12
 
-## djangoの汎用ビューをフル活用して、最低限のコードでブログの一覧・個別・作成・編集・削除という機能を作ろう！
+## 管理サイトをカスタマイズしよう！前編 〜全体設定編〜
 
-前回まででViewとTemplateとModelすべてを説明しました。  
-DB上のデータをウェブサイトに表示するために必要な要素はすべて揃っています。  
-それらを自分で組み合わせても1からウェブサイトを作ることも出来ます。  
-しかし、ウェブサイトでよくあるパターンはdjangoの方ですでに用意されています。  
-今回はよくあるパターンである一覧・個別・作成・編集・削除という機能をdjangoを最大限に活用して少ないコードで作っていきます。
+djangoの大きな特徴の１つは自動生成された管理サイトがついてくることです。  
+サービス管理者が内部で使ったり、カスタマイズをすれば一般ユーザーも使うことが可能です！
 
 ## 完成版プロジェクト
 
-<https://github.com/shun-rec/django-website-07>
+<https://github.com/shun-rec/django-website-12>
 
 ## 事前準備
 
 ### 新規サーバーを立ち上げる
 
-### 前回モデルを作ったプロジェクトをダウンロード
+[Paiza](https://paiza.cloud)で作業している方はdjangoにチェックを入れて新規サーバーを立ち上げて下さい。  
+自分のマシンで作業している方はdjangoが使える作業用フォルダを作成して下さい。
+
+### ブログを作ったプロジェクトをダウンロード
+
+※ 新規djangoプロジェクトを作成しても構いません。その場合は、テスト用のモデルを追加して下さい。
 
 ターミナルを開いて、以下を実行。
 
 ```sh
-git clone https://github.com/shun-rec/django-website-06
+git clone https://github.com/shun-rec/django-website-07
 ```
 
 フォルダを移動
 
 ```sh
-cd django-website-06
+cd django-website-07
 ```
 
 ### マイグレートしてDBを作成
@@ -42,339 +44,255 @@ python manage.py migrate
 python manage.py createsuperuser
 ```
 
-### django shellから以下を実行しカテゴリとタグを作成
+* ユーザー名: admin
+* メールアドレス: （無し）
+* パスワード: admin
 
-#### django shellの起動
+## 管理サイトのタイトルなど全体設定をカスタマイズしよう
+
+最も簡単でよく使われる方法は、全体URL設定（`pj_blog/urls.py`）の`admin`オブジェクトを直接編集することです。  
+
+`pj_blog/urls.py`に以下を追記。
+
+```py
+from django.contrib.auth.models import Group
+
+admin.site.site_title = '匿名ブログ 内部管理サイト'
+admin.site.site_header = '匿名ブログ 内部管理サイト'
+admin.site.index_title = 'メニュー'
+admin.site.unregister(Group)
+admin.site.disable_action('delete_selected')
+```
+
+* `site_title` ブラウザのタブに表示されるタイトル（<title>）
+* `site_header` ヘッダ部分に表示されるタイトル（<h1>）
+* `index_title` トップページタイトル
+* `unregister` 管理サイトに登録済みのモデルを解除する
+* `disable_action` 指定したアクションを使用不可にする（`delete_selected`は削除不可）
+
+変更可能な値の一覧は以下の公式ドキュメントに一覧されています。
+
+<https://docs.djangoproject.com/en/3.1/ref/contrib/admin/#adminsite-objects>
+
+このカスタマイズで十分ではない場合には独自の`AdminSite`クラスを作ることも出来ます。
+
+### 動かしてみよう
+
+開発サーバーを起動して管理サイトにアクセスしましょう。  
+サイト名が変わっていることを確認出来たらOKです。
 
 ```sh
-python manage.py shell
+python manage.py runserver
 ```
 
-#### カテゴリとタグとサンプル投稿を作成
+## 管理サイト全体のテンプレート（HTML）を変更しよう
 
-django shellで以下をコピーアンドペーストして実行してサンプルデータを作成。
+djangoの管理サイトのテンプレートは細かいパーツに分かれています。  
+そのため、好きな部分だけを選んでカスタマイズすることが可能です。
 
-※中身の詳しい解説は前回を見て下さい。
+### 最も優先されるテンプレートフォルダの設定
+
+まずは、プロジェクト共通のテンプレートフォルダを作ります。  
+その上で、そのフォルダ内のテンプレートが最優先で使われるように設定します。  
+
+djangoは同名のテンプレートがある場合、先に見つけたほうだけを使用します。  
+この仕組を利用して、自作のテンプレートに置き換えます。
+
+1. プロジェクト直下に`templates`フォルダを新規作成します。  
+2. その中にさらに`admin`フォルダを新規作成します。
+3. 全体設定 `pj_blog/settings.py`の`TEMPLATES`に1で作成した`templates`フォルダを指定します。
 
 ```py
-from blog.models import *
-cat = Category.objects.create(name="cat 1")
-Category.objects.create(name="cat 2")
-tag1 = Tag.objects.create(name="tag 1")
-tag2 = Tag.objects.create(name="tag 2")
-Tag.objects.create(name="tag 3")
-post = Post()
-post.title = "post 1"
-post.body = "body 1"
-post.category = cat
-post.save()
-post.tags.add(tag1)
-post.tags.add(tag2)
-post.save()
-exit
+'DIRS': [os.path.join(BASE_DIR, 'templates')],
 ```
 
-## 記事一覧と個別ページを作ろう
+`DIRS`に設定したテンプレートフォルダは最優先で探されます。
 
-### Viewの作成
+これで、`templates/admin`以下に同名のファイルがある場合はそれが使われます。  
+無い場合にはデフォルトのファイルが使用されます。
 
-`blog/views.py`
+### WELCOMEメッセージを削除してみよう
+
+ヘッダー右側のWELCOMEは少し古い感じがするので削除して、ユーザー名だけが表示されるようにしましょう。  
+
+管理サイト全体で共通部分のテンプレートはデフォルトでは`admin/base_site.html`というファイルです。  
+なので、同名のファイルを先程作成した`templates/admin`フォルダに新規作成します。
+
+`templates/admin/base_site.html`
 
 ```py
-# ListViewとDetailViewを取り込み
-from django.views.generic import ListView, DetailView
+{% extends 'admin/base_site.html' %}
 
-# ListViewは一覧を簡単に作るためのView
-class Index(ListView):
-    # 一覧するモデルを指定 -> `object_list`で取得可能
-    model = Post
-
-# DetailViewは詳細を簡単に作るためのView
-class Detail(DetailView):
-    # 詳細表示するモデルを指定 -> `object`で取得可能
-    model = Post
-```
-
-### Templateの作成
-
-#### Bootstrapを取り込んだベースTemplateを作成
-
-Bootstrapについては[こちら](https://getbootstrap.com/docs/4.0/getting-started/introduction/)。  
-CSSを自分で書かなくても簡単に見た目を整えられる「CSSフレームワーク」。
-
-※フォルダがない場合は作成
-
-`blog/templates/blog/base.html`
-
-```html
-<!doctype HTML>
-<html>
-    <head>
-        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
-        <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
-        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
-    </head>
-    <body>
-        <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-            <a class="navbar-brand" href="/">匿名ブログ</a>
-        </nav>
-        <div class="container mt-4">
-        {% block main %}
-        <p>※コンテンツがありません。</p>
-        {% endblock %}
-        </div>
-    </body>
-</html>
-```
-
-#### 一覧（トップ）ページのTemplateを作成
-
-※ListViewはこの名前でテンプレートを探すのでこの名前でないとダメ。
-
-`blog/templates/blog/post_list.html`
-
-```html
-{% extends "blog/base.html" %}
-{% block main %}
-<h2>記事一覧</h2>
-<ol>
-    {% for post in object_list %}
-    <li><a href="#">{{ post.title }}</a></li>
-    {% endfor %}
-</ol>
+{% block welcome-msg %}
+    <strong>{{ user }}</strong>
 {% endblock %}
 ```
 
-#### 個別（詳細）ページのTemplateを作成
+※ テンプレートの文法が分からないという方は第2回を参照して下さい。  
 
-※DetailViewはこの名前でテンプレートを探すのでこの名前でないとダメ
+この自作のテンプレートではまず1行目の`extends`でデフォルトの`base_site.html`をすべてコピーしてきています。  
+そのうえで、`welcome-msg`というブロックの中身だけを、ユーザー名だけを表示するように上書きしています。
 
-`blog/templates/blog/post_detail.html`
+デフォルトのファイル名や用意されているブロックはdjangoのソースコードを見ることで知ることが出来ます。  
+例えば、`welcome-msg`は`base_site.html`がさらに`extends`している`base.html`に定義されています。
 
-```html
-{% extends "blog/base.html" %}
-{% load l10n %}
-{% block main %}
-<h2>{{ object.title }}</h2>
-<p><time>{{ object.updated|localize }}</time></p>
-<div>
-    {{ object.body }}
-</div>
+<https://github.com/django/django/blob/master/django/contrib/admin/templates/admin/base.html>
+
+※ `base.html`自作することも出来ますが、djangoのアップデート時に頻繁に更新されるため自作のテンプレートが壊れやすくなります。
+
+### 動かしてみよう
+
+開発サーバーを起動して管理サイトにアクセスしましょう。  
+WELCOMEメッセージが削除されていたらOKです。
+
+## 管理サイト全体のデザイン（CSS）を変更しよう
+
+### プロジェクト共通の静的ファイルフォルダを作成しよう
+
+まずは静的ファイルフォルダをプロジェクト直下に作成して、全体設定でそのフォルダを指定します。  
+
+プロジェクト直下に `static` というフォルダを新規作成します。
+
+全体設定 `pj_blog/settings.py`に以下を追記します。  
+これで先程作成した`static`フォルダがdjangoから使えるようになります。
+
+```py
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+```
+
+### 全体のデザインを変えてみよう
+
+まずは全体のデザインを変更するCSSを`static`フォルダ内に以下の内容で作成します。
+
+`static/base_site.css`
+
+```css
+#header {
+  background: #2e8bc0;
+  color: white;
+}
+
+body {
+  background: #b1d4e0;
+}
+
+h1 {
+  color: #0c2d48;
+}
+
+#header a:link, #header a:visited {
+  color: white;
+}
+#branding h1, #branding h1 a:visited, #branding h1 a:link {
+  color: white;
+}
+
+.module h2, .module caption, .inline-group h2 {
+  background: #2e8bc0;
+  color: white;
+}
+
+a.section:link, a.section:visited {
+  color: white;
+}
+```
+
+次にこのCSSを管理サイト全体から読み込まれるように設定しましょう。
+
+管理サイト全体のHTMLの変更は先程使用した`base_site.html`で行います。
+
+CSSを記述するためのブロック`extrastyle`が用意されているので、この中に追記します。  
+追記の場合にはブロックの先頭に`{{ block.super }}`と記述します。
+
+`templates/admin/base_site.html`
+
+```
+{% load static %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    <link rel="stylesheet" type="text/css" href="{% static 'base_site.css' %}" />
 {% endblock %}
-```
-
-### URLを設定
-
-#### BlogアプリのURL設定
-
-`blog/urls.py`
-
-```py
-from django.urls import path
-
-from . import views
-
-urlpatterns = [
-    path('', views.Index.as_view(), name="index"),
-    
-    # <pk>にPostのIDを渡すと表示される。
-    path('detail/<pk>/', views.Detail.as_view(), name="detail"),
-]
-```
-
-#### 全体設定のURL設定
-
-`pj_blog/urls.py`
-
-```py
-from django.contrib import admin
-from django.urls import path, include
-
-urlpatterns = [
-    path('admin/', admin.site.urls),
-    path("", include("blog.urls")),
-]
-```
-
-### 一覧記事に記事へのリンクを設定
-
-`blog/templates/blog/post_list.html`の6行目を以下に変更
-
-```html
-<li><a href="{% url 'detail' post.id %}">{{ post.title }}</a></li>
 ```
 
 ### 動かしてみよう
 
-最初に作ったサンプル投稿が一覧に表示されているはずです。  
-一覧をクリックすると個別ページに移動します。
+開発サーバーを起動して管理サイトにアクセスしましょう。  
+デザインが大きく変わってたらOKです。  
 
-## ブログの新規投稿画面を作ろう
+### CSSでスタイルを当てる要素をどのように見つけるか？
 
-### Viewの作成
+FirefoxやChromeには開発ツールがついています。  
+調べたい要素を右クリックをして「要素を調査」というような項目をクリックすると、その要素のCSS指定子が表示されます。  
+あとはそれをCSSにコピーするだけです。
 
-`blog/views.py`に以下を追記
+## 管理サイトのURLを変更しよう
 
-```py
-from django.views.generic.edit import CreateView
+セキュリティ上も、デフォルトの`admin/`よりは変えておいた方が良いでしょう。
 
-# CreateViewは新規作成画面を簡単に作るためのView
-class Create(CreateView):
-    model = Post
-    
-    # 編集対象にするフィールド
-    fields = ["title", "body", "category", "tags"]
-```
-
-### Templateの作成
-
-* `Post`用の投稿フォームが`{{ form.as_p }}`で自動的に生成されます。
-* `{% csrf_token %}`はセキュリティ上form内に必ず必要な決り文句。
-
-※CreateViewはこの名前でテンプレートを探すのでこの名前でないとダメ
-
-`blog/templates/blog/post_form.html`
-
-```html
-{% extends "blog/base.html" %}
-
-{% block main %}
-<h2>新規投稿</h2>
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <input type="submit" value="投稿" class="btn btn-primary" />
-</form>
-{% endblock %}
-```
-
-### URLの設定
-
-`blog/urls.py`のdetailのURL設定の下に以下を追加。
+全体URL設定のadminのところを好きな文字列に変更します。
 
 ```py
-path('create/', views.Create.as_view(), name="create"),
+    path('staff-admin/', admin.site.urls),
 ```
 
-### トップページからリンクを貼る
+## 管理サイトをもう１つ追加しよう
 
-`blog/templates/blog/post_list.html`
+内部で管理者が使う管理サイトとは別の管理サイトも複数追加することが出来ます。  
+今回はブログサービスのダッシュボードのような一般ユーザーが使える管理サイトを追加してみましょう。
 
-`</ol>`の次の行に以下を追記。
+`/mypage/`というURLでブログ、カテゴリ、タグだけが編集出来る管理サイトを作ります。  
+他のユーザー情報は見せたくないので非表示とします。  
+そして、スタッフでなくてもログイン出来ます。
 
-```html
-<p><a href="{% url 'create' %}">新規投稿</a></p>
-```
+### 管理サイトクラスを作ろう
 
-### モデルの個別ページのURL設定
-
-デフォルトでは新規投稿したあとに、自動で投稿したばかりのページに移動します。  
-なので、各投稿のURLを知らせる必要があります。
-
-`blog/models.py`の`Post`モデルに、`import`と`get_absolute_url`メソッドを追記。
+`blog/admin.py`に以下の内容を追記します。  
+`pj_blog/admin.py`でも構いませんが、今回は`blog`アプリの方に追加します。
 
 ```py
-from django.urls import reverse_lazy
+from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.admin import AdminSite
 
-class Post(models.Model):
-    # 略
-    def get_absolute_url(self):
-        return reverse_lazy("detail", args=[self.id])
+class BlogAdminSite(AdminSite):
+    site_header = 'マイページ'
+    site_title = 'マイページ'
+    index_title = 'ホーム'
+    site_url = None
+    login_form = AuthenticationForm
+
+    def has_permission(self, request):
+        return request.user.is_active
+
+
+mypage_site = BlogAdminSite(name="mypage")
+
+mypage_site.register(models.Post)
+mypage_site.register(models.Tag)
+mypage_site.register(models.Category)
 ```
 
-### 動ごかしてみよう
+デフォルトで用意されている`admin.site`と同等の`mypage_site`という管理サイトを自作しました。  
+設定出来る値は先程と同様です。  
+`site_url`というのを`None`に設定することで、`サイトを表示`というリンクを削除することが出来ます。
 
-トップページから新規投稿ページを開いて、投稿を追加できればOKです。
+### URLを登録しよう
 
-## 投稿編集画面を作ろう
-
-### Viewの作成
+`blog/urls.py`のURLパターンに以下を追記します。
 
 ```py
-from django.views.generic.edit import UpdateView
+from .admin import mypage_site
 
-class Update(UpdateView):
-    model = Post
-    fields = ["title", "body", "category", "tags"]
+path('mypage/', mypage_site.urls),
 ```
 
-### Templateの作成
+### スタッフではないユーザーを管理サイトから追加しよう
 
-※UpdateViewはデフォルトでCreateViewと同じTemplateを使うので必要なし！
-
-### URLの設定
-
-`blog/urls.py`
-
-`create`の次に以下を追記。
-
-```py
-    path('update/<pk>', views.Update.as_view(), name="update"),
-```
-
-### 個別ページからリンクを貼る
-
-`blog/templates/blog/post_detail.html`
-
-`{% endblock %}`の上に以下を追記。
-
-```html
-<p><a href="{% url 'update' object.pk %}">編集</a></p>
-```
+スタッフではないユーザーを適当に（例: `user1`）作成してブログへの権限をすべて与えておきます。  
+※ 権限システムについては次回以降解説します。
 
 ### 動かしてみよう
 
-個別ページから編集ボタンを押して、その投稿を編集出来ればOKです。
-
-## 投稿削除画面を作ろう
-
-### Viewの作成
-
-```py
-from django.views.generic.edit import DeleteView
-
-class Delete(DeleteView):
-    model = Post
-    
-    # 削除したあとに移動する先（トップページ）
-    success_url = "/"
-```
-
-### Templateの作成
-
-※DetailViewはこの名前でテンプレートを探すのでこの名前でないとダメ
-
-`blog/templates/blog/post_confirm_delete.html`
-
-```html
-{% extends "blog/base.html" %}
-
-{% block main %}
-<h2>削除確認</h2>
-<p>{{ object.title }}を本当に削除してもよろしいですか？</p>
-<form method="post">
-    {% csrf_token %}
-    <input type="submit" value="削除" class="btn btn-danger" />
-</form>
-{% endblock %}
-```
-
-### URLの設定
-
-`update`のURL設定の下に以下を追記。
-
-`blog/urls.py`
-
-```py
-    path('delete/<pk>', views.Delete.as_view(), name="delete"),
-```
-
-### 動かしてみよう
-
-個別ページから削除ページに移動できて、投稿が削除出来ればOKです。
-
-## おわりに
-
-今回作成した一覧・個別・作成・編集・削除はあらゆるものがカスタマイズ可能です。  
-自分で一から作らずにdjangoがもともと用意している機能を最大限に使うようにしましょう。
+開発サーバーを起動して管理サイトにアクセスしましょう。  
+デフォルトの管理サイトが残ったままで、`/mypage/`にアクセスすると別の管理サイトも使えるはずです。  
+`user1`は`/mypage/`にはログイン出来てブログの投稿は出来ますが、`/staff-admin/`にはログインできません。
