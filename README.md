@@ -27,7 +27,7 @@ git clone https://github.com/shun-rec/django-website-12
 フォルダを移動
 
 ```sh
-cd django-website-07
+cd django-website-12
 ```
 
 ### マイグレートしてDBを作成
